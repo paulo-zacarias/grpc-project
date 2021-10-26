@@ -10,22 +10,6 @@ using System.Threading.Tasks;
 
 namespace GrpcClient
 {
-    //public class Program
-    //{
-    //    public static void Main(string[] args)
-    //    {
-    //        CreateHostBuilder(args).Build().Run();
-    //    }
-
-    //    // Additional configuration is required to successfully run gRPC on macOS.
-    //    // For instructions on how to configure Kestrel and gRPC clients on macOS, visit https://go.microsoft.com/fwlink/?linkid=2099682
-    //    public static IHostBuilder CreateHostBuilder(string[] args) =>
-    //        Host.CreateDefaultBuilder(args)
-    //            .ConfigureWebHostDefaults(webBuilder =>
-    //            {
-    //                webBuilder.UseStartup<Startup>();
-    //            });
-    //}
     class Program
     {
         static async Task Main(string[] args)
@@ -41,6 +25,7 @@ namespace GrpcClient
 
                     Console.WriteLine($"{message.Msg}");
                 }
+                Console.WriteLine("Server has closed the stream.");
             }
             Console.WriteLine("Press any key to exit...");
             Console.ReadKey();

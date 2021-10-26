@@ -7,10 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Protobuf Include="..\..\..\protos\chat_app.proto" GrpcServices="Client">
-      <Link>Protos\chat_app.proto</Link>
-    </Protobuf>
     <Protobuf Include="Protos\greet.proto" GrpcServices="Server" />
+    <Protobuf Include="Protos\chat_app.proto" GrpcServices="Client" />
   </ItemGroup>
 
   <ItemGroup>
