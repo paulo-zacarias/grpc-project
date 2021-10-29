@@ -1,0 +1,23 @@
+version: "3.8"
+services:
+
+    chat-server:
+        build:
+            context: ./server
+            dockerfile: Dockerfile
+        image: app-server
+        networks:
+            - chatting
+        ports:
+            - 50051:50051
+
+    chat-client:
+        build:
+            context: ./client/GrpcClient
+            dockerfile: GrpcClient/Dockerfile
+        image: app-client
+        networks:
+            - chatting
+
+networks:
+    chatting:

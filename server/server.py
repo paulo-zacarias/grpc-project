@@ -1,5 +1,9 @@
 import asyncio
 import logging
+from pynput import keyboard
+from queue import Queue
+
+import os
 
 import grpc
 import chat_app_pb2 as pb2
@@ -9,18 +13,56 @@ import chat_app_pb2_grpc as pb2_grpc
 _cleanup_coroutines = []
 
 class ChatServicer(pb2_grpc.ChatAppServicer):
- 
-    async def receiveMessages(self, request, context: grpc.ServicerContext):
-        print(f'Got message request from {request.name}')
+
+    total_messages = ''
+
+    def __init__(self):
+        self.command = 'cls' if os.name in ('nt', 'dos') else 'clear'
+
+    async def receiveMessages(self, request, context):
+
+        global shallContinue
+        shallContinue = True
+
+        def clearConsole():
+            os.system(self.command)
+            
+        clearConsole()
+        self.total_messages = ''
+        print(f'Got message request from {request.name}.\nType text to send. Press Esc key to stop.\n')
+
+        queue = Queue()
+
+        def on_press(key):
+            if key == keyboard.Key.esc:
+                print('exit requested...')
+                globals()['shallContinue'] = False
+                queue.put('')
+            if key == keyboard.Key.space:
+                queue.put(' ')
+            if key == keyboard.Key.enter:
+                queue.put('\n')
+            if (type(key) == keyboard.KeyCode):
+                k = str(key).replace(f'{chr(39)}', '')
+                queue.put(k)
+
+
+        listener = keyboard.Listener(on_press=on_press)
+        listener.start()
 
         while True:
-            text = input('Type text: ')
-            if(text == '+exit'):
-                return
-            yield pb2.ChatMessage(msg=text)
 
-            # message = input(f'Type text: ')
-            # yield pb2.ChatMessage(msg=message)
+            message = queue.get()
+            self.total_messages += message
+            clearConsole()
+            print(self.total_messages)
+            if(not shallContinue):
+                print()
+                self.shallContinue = True
+                listener.stop()
+                queue.all_tasks_done
+                return
+            yield pb2.ChatMessage(msg=message)
 
 async def serve() -> None:
     server = grpc.aio.server()
@@ -29,7 +71,6 @@ async def serve() -> None:
     server.add_insecure_port(listen_addr)
     logging.info("Starting server on %s", listen_addr)
     await server.start()
-    # await server.wait_for_termination()
 
     # https://github.com/grpc/grpc/pull/26622/files
     async def server_graceful_shutdown():
@@ -41,11 +82,6 @@ async def serve() -> None:
 
     _cleanup_coroutines.append(server_graceful_shutdown())
     await server.wait_for_termination()
-
-
-# if __name__ == '__main__':
-#     logging.basicConfig(level=logging.INFO)
-#     asyncio.run(serve())
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)

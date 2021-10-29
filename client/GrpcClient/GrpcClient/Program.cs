@@ -17,15 +17,33 @@ namespace GrpcClient
             // The port number(5001) must match the port of the gRPC server.
             using var channel = GrpcChannel.ForAddress("http://localhost:50051");
             var client = new ChatApp.ChatAppClient(channel);
+
             using (var call = client.receiveMessages(new StartRequest { Name = "fooBar" }))
             {
-                while (await call.ResponseStream.MoveNext())
+                string messages = "";
+                // If the server disconnects before closing the stream, client will throw exception
+                try
                 {
-                    var message = call.ResponseStream.Current;
+                    while (await call.ResponseStream.MoveNext())
+                    {
+                        var message = call.ResponseStream.Current;
+                        messages += message.Msg;
 
-                    Console.WriteLine($"{message.Msg}");
+                        //Console.WriteLine($"{message.Msg}");
+                        Console.Clear();
+                        Console.WriteLine(messages);
+                    }
                 }
-                Console.WriteLine("Server has closed the stream.");
+                catch (RpcException)
+                {
+                    Console.WriteLine("Server disconnected");
+                    return;
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("Something bad happend :(");
+                    return;
+                }
             }
             Console.WriteLine("Press any key to exit...");
             Console.ReadKey();
