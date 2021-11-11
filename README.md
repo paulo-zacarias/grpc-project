@@ -1,22 +1,48 @@
 # Chat-app
 
-This project implements a simple chat application using [grpc](https://grpc.io/), [Python](https://www.python.org/) and [.NET/C#](https://dotnet.microsoft.com/).
+This project implements a *one-way* chat application using [grpc](https://grpc.io/), [Python](https://www.python.org/) and [.NET/C#](https://dotnet.microsoft.com/).
 
 ## Getting started
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+This project consists of two containerized (Docker) applications:
+* Python: server
+* .NET: client
+ 
+**The server** accepts the text typed by the user in the console.
+ 
+**The client** printouts the text from the server to the console as it is being typed.
+
+grpc is used for inter-container communication.
 
 ### Prerequisites
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+To run this application you will need [Docker](https://www.docker.com/).
 
 ### Installation
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `--prod` flag for a production build.
+Clone this project if you haven't done it yet :) <br>
+Open a terminal in the root folder and build the images and containers:
+
+```
+docker-compose up --no-start
+```
+
+In the same terminal start the server:
+```
+docker start -i app-server
+```
+If the server starts successfully it will show the info message: *Starting server on [::]:50051*
+
+Open another terminal and start the client:
+```
+docker start -i app-client
+```
 
 ### Usage
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+After starting the client, the server's terminal should show the following message: *Got message request from fooBar. Type text to send. Press Ctrl+C to stop.*
+
+At this point you can type in the server's terminal and the text will be displayed in the client's terminal.
 
 ## Contact
 
