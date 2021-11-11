@@ -1,11 +1,7 @@
 using Grpc.Core;
 using Grpc.Net.Client;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Hosting;
+using Grpc.Net.Client.Configuration;
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace GrpcClient
@@ -14,29 +10,59 @@ namespace GrpcClient
     {
         static async Task Main(string[] args)
         {
-            // The port number(5001) must match the port of the gRPC server.
-            using var channel = GrpcChannel.ForAddress("http://localhost:50051");
+            // gRPC retries if server is not available
+            //https://docs.microsoft.com/en-us/aspnet/core/grpc/retries?view=aspnetcore-6.0
+
+            var defaultMethodConfig = new MethodConfig
+            {
+                Names = { MethodName.Default },
+                RetryPolicy = new RetryPolicy
+                {
+                    MaxAttempts = 5,
+                    InitialBackoff = TimeSpan.FromSeconds(1),
+                    MaxBackoff = TimeSpan.FromSeconds(5),
+                    BackoffMultiplier = 1.5,
+                    RetryableStatusCodes = { StatusCode.Unavailable }
+                }
+            };
+
+            using var channel = GrpcChannel.ForAddress("http://app-server:50051", new GrpcChannelOptions
+            {
+                ServiceConfig = new ServiceConfig { MethodConfigs = { defaultMethodConfig } }
+            });
+
             var client = new ChatApp.ChatAppClient(channel);
 
             using (var call = client.receiveMessages(new StartRequest { Name = "fooBar" }))
             {
-                string messages = "";
                 // If the server disconnects before closing the stream, client will throw exception
                 try
                 {
+                    // Manually cancel the call from client side
+                    Console.CancelKeyPress += delegate
+                    {
+                        Console.WriteLine("Cancelling the call...");
+                        call.Dispose();
+                        Environment.Exit(0);
+                    };
                     while (await call.ResponseStream.MoveNext())
                     {
-                        var message = call.ResponseStream.Current;
-                        messages += message.Msg;
-
-                        //Console.WriteLine($"{message.Msg}");
-                        Console.Clear();
-                        Console.WriteLine(messages);
+                        var received = call.ResponseStream.Current;
+                        Console.Write(received.Msg);
                     }
                 }
-                catch (RpcException)
+                catch (RpcException ex)
                 {
-                    Console.WriteLine("Server disconnected");
+                    if (ex.StatusCode == StatusCode.Cancelled)
+                        Console.WriteLine("\n\nServer has terminated the stream.");
+                    if (ex.StatusCode == StatusCode.Unavailable)
+                    {
+                        Console.WriteLine("Server is not available.");
+                    } 
+                    else
+                    {
+                        Console.WriteLine($"Call ended with Status Code {ex.StatusCode}");
+                    }
                     return;
                 }
                 catch (Exception)

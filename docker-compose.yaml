@@ -6,10 +6,13 @@ services:
             context: ./server
             dockerfile: Dockerfile
         image: app-server
+        stdin_open: true # docker run -i
+        tty: true        # docker run -t
         networks:
             - chatting
         ports:
             - 50051:50051
+        container_name: app-server
 
     chat-client:
         build:
@@ -18,6 +21,8 @@ services:
         image: app-client
         networks:
             - chatting
+        container_name: app-client
 
 networks:
     chatting:
+        name: chatting_network

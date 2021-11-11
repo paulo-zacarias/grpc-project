@@ -525,3 +525,8 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+
+# grpc files
+
+chat_app_pb2_grpc.py
+chat_app_pb2.py

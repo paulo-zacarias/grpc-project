@@ -1,5 +1,4 @@
-FROM python:3.7.12-buster
-
+FROM python:3.10.0-buster
 WORKDIR /server
 
 RUN python -m pip install --upgrade pip
